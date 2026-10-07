@@ -1,0 +1,62 @@
+{
+  "name": "mcp-detector",
+  "version": "0.1.0",
+  "description": "Security, reliability, and quality scanner for Model Context Protocol (MCP) servers.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "mcp-detector": "dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "github-action",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx src/cli/index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "docs:rules": "tsx scripts/gen-rules-doc.ts",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "ai-agents",
+    "security",
+    "developer-tools",
+    "llm",
+    "cli",
+    "github-actions"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "commander": "^15.0.0",
+    "picocolors": "^1.1.1",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  }
+}

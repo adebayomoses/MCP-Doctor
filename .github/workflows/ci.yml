@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Docs are up to date
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
+        run: |
+          npm run docs:rules
+          git diff --exit-code docs/rules.md
+
+  dogfood:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci && npm run build
+      - name: Scan the secure example (must pass)
+        run: node dist/cli/index.js scan --fail-on medium -- node examples/secure-server/server.mjs
+      - name: Scan the vulnerable example (must fail)
+        run: |
+          if node dist/cli/index.js scan --fail-on high -- node examples/vulnerable-server/server.mjs; then
+            echo "expected the vulnerable example to fail" && exit 1
+          fi

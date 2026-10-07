@@ -1,0 +1,94 @@
+name: "MCP Detector"
+description: "Security, reliability and quality scan for a Model Context Protocol (MCP) server."
+author: "mcp-detector"
+branding:
+  icon: shield
+  color: blue
+
+inputs:
+  server-command:
+    description: "Command that starts a stdio MCP server, e.g. `node build/index.js`."
+    required: false
+  server-url:
+    description: "URL of a remote MCP server (http/https). Use instead of server-command."
+    required: false
+  config:
+    description: "Path to an mcp-detector.yml. Auto-discovered in the working directory if omitted."
+    required: false
+  fail-on:
+    description: "Fail the job if any finding is at or above this severity: info | low | medium | high | critical | none."
+    required: false
+    default: "high"
+  active:
+    description: "Also call tools that look read-only to measure latency and timeouts."
+    required: false
+    default: "false"
+  version:
+    description: "mcp-detector version to run (npm tag or semver)."
+    required: false
+    default: "latest"
+  working-directory:
+    description: "Directory to run in."
+    required: false
+    default: "."
+  node-version:
+    description: "Node.js version."
+    required: false
+    default: "20"
+
+outputs:
+  score:
+    description: "Overall health score (0-100)."
+    value: ${{ steps.scan.outputs.score }}
+  findings:
+    description: "Total number of findings."
+    value: ${{ steps.scan.outputs.findings }}
+  report-path:
+    description: "Path to the JSON report."
+    value: ${{ steps.scan.outputs.report-path }}
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - id: scan
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        SERVER_COMMAND: ${{ inputs.server-command }}
+        SERVER_URL: ${{ inputs.server-url }}
+        CONFIG: ${{ inputs.config }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        ACTIVE: ${{ inputs.active }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        # Inputs are passed through env vars (never interpolated into the script) to avoid injection.
+        set -u
+        report="${RUNNER_TEMP}/mcp-detector.json"
+        args=(scan --format json --output "$report" --fail-on "$FAIL_ON")
+        [ -n "$CONFIG" ] && args+=(--config "$CONFIG")
+        [ "$ACTIVE" = "true" ] && args+=(--active)
+        if [ -n "$SERVER_URL" ]; then args+=("$SERVER_URL")
+        elif [ -n "$SERVER_COMMAND" ]; then args+=("$SERVER_COMMAND")
+        fi
+
+        set +e
+        npx --yes "mcp-detector@${VERSION}" "${args[@]}"
+        code=$?
+        set -e
+
+        if [ -f "$report" ]; then
+          npx --yes "mcp-detector@${VERSION}" report "$report" --format markdown >> "$GITHUB_STEP_SUMMARY"
+          score=$(node -e "console.log(require(process.argv[1]).score)" "$report")
+          count=$(node -e "console.log(require(process.argv[1]).findings.length)" "$report")
+          echo "score=$score" >> "$GITHUB_OUTPUT"
+          echo "findings=$count" >> "$GITHUB_OUTPUT"
+          echo "report-path=$report" >> "$GITHUB_OUTPUT"
+          if [ "$code" -ne 0 ]; then
+            echo "::error title=MCP Detector failed::score ${score}/100, ${count} finding(s); fail-on=${FAIL_ON}"
+          fi
+        fi
+        exit $code
