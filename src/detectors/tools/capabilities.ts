@@ -22,6 +22,8 @@ interface Signal {
   name?: RegExp;
   /** Matched against the description. */
   desc?: RegExp;
+  /** Custom description test, for signals that need more than one regex. */
+  descFn?: (description: string) => boolean;
   /** Matched against parameter names. */
   param?: RegExp;
 }
@@ -35,12 +37,12 @@ const SIGNALS: Signal[] = [
   },
   {
     capability: "fs_write",
-    name: /\b(write|save|create|append|edit|overwrite|upload|mkdir|move|rename|copy)\b/i,
+    name: /\b(write|save|create|append|edit|overwrite|upload|move|rename|copy)\b.*\b(file|files|dir|directory|folder|path|document)\b|\b(mkdir|touch|writefile)\b/i,
     desc: /\b(write[s]?|create[s]?|overwrite[s]?|modif(y|ies)|append[s]?|save[s]?)\b[^.]{0,40}\b(file|files|director(y|ies)|folder|disk)\b/i,
   },
   {
     capability: "fs_delete",
-    name: /\b(delete|remove|rm|unlink|rmdir|purge|wipe|erase)\b/i,
+    name: /\b(delete|remove|purge|wipe|erase)\b.*\b(file|files|dir|directory|folder|path)\b|\b(rm|unlink|rmdir)\b/i,
     desc: /\b(delete[s]?|remove[s]?|unlink[s]?|erase[s]?)\b[^.]{0,40}\b(file|files|director(y|ies)|folder)\b/i,
   },
   {
@@ -67,10 +69,28 @@ const SIGNALS: Signal[] = [
   },
   {
     capability: "credentials",
-    name: /\b(secret|secrets|credential|credentials|password|token|apikey|keychain|vault|env|ssh)\b/i,
-    desc: /\b(secret[s]?|credential[s]?|password[s]?|api[ _-]?key[s]?|access token[s]?|private key[s]?|keychain|environment variable[s]?)\b/i,
+    // A credential noun alone is not enough ("count tokens", "Credentials are never returned"): the tool must
+    // be described as reading or handling them.
+    name: /\b(get|read|list|show|dump|export|fetch|retrieve|reveal|print|create|generate|issue|rotate|revoke|set|store|manage)\b.*\b(secrets?|credentials?|passwords?|tokens?|api ?keys?|keychain|vault|env|ssh)\b|\b(printenv|getenv|env)\b/i,
+    descFn: credentialAccess,
   },
 ];
+
+const CRED_NOUN = /\b(secrets?|credentials?|passwords?|api[ _-]?keys?|access tokens?|private keys?|keychain|environment variables?)\b/gi;
+const CRED_VERB = /\b(reads?|returns?|exposes?|retrieves?|gets?|lists?|dumps?|shows?|reveals?|accesses?|fetch(?:es)?|stores?|manages?|rotates?|exports?|outputs?)\b/i;
+const NEGATION = /\b(no|not|never|without|n't|cannot|can't|won't|doesn't|don't|isn't|aren't)\b/i;
+
+/** True when a description says the tool reads or handles credentials (and is not just denying it). */
+function credentialAccess(desc: string): boolean {
+  for (const m of desc.matchAll(CRED_NOUN)) {
+    const i = m.index ?? 0;
+    const before = desc.slice(Math.max(0, i - 40), i);
+    const after = desc.slice(i + m[0].length, i + m[0].length + 40);
+    if (NEGATION.test(before) || NEGATION.test(after)) continue;
+    if (CRED_VERB.test(before) || CRED_VERB.test(after)) return true;
+  }
+  return false;
+}
 
 /**
  * Heuristically classify what a tool can do. A capability is reported only when
@@ -84,7 +104,7 @@ export function classifyTool(tool: ToolDef): CapabilityHit[] {
   const spaced = tool.name.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_\-.]+/g, " ");
   for (const s of SIGNALS) {
     if (s.name?.test(spaced)) hits.set(s.capability, `tool name "${tool.name}"`);
-    else if (s.desc?.test(desc)) hits.set(s.capability, "tool description");
+    else if (s.desc?.test(desc) || s.descFn?.(desc)) hits.set(s.capability, "tool description");
     else if (s.param) {
       const p = params.find((k) => s.param!.test(k));
       if (p) hits.set(s.capability, `parameter "${p}"`);

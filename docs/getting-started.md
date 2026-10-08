@@ -8,6 +8,16 @@ npm install -g mcp-detector
 npx mcp-detector --help
 ```
 
+## 1b. Easiest start: the web app or the demo
+
+```bash
+mcp-detector            # in a terminal: a short menu
+mcp-detector ui         # web app: paste a server, click Scan  (see web-app.md)
+mcp-detector demo       # see a report for a built-in example server
+```
+
+Everything below is the command line, which is what scripts and CI use.
+
 ## 2. Scan a server
 
 **Local (stdio) server:** everything after `--` is the command that starts it.

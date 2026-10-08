@@ -2,8 +2,9 @@ import pc from "picocolors";
 import { CATEGORIES, type Category, type ScanResult, type Severity } from "../core/types.js";
 import { SEVERITY_ICON, SEVERITY_LABEL } from "./severity.js";
 import { uniqueRecommendations } from "./recommendations.js";
+import { renderHtmlReport } from "./html.js";
 
-export type ReportFormat = "terminal" | "json" | "markdown";
+export type ReportFormat = "terminal" | "json" | "markdown" | "html";
 
 export interface RenderOptions {
   verbose?: boolean;
@@ -34,6 +35,8 @@ export function renderReport(result: ScanResult, format: ReportFormat, opts: Ren
       return JSON.stringify(toJson(result), null, 2);
     case "markdown":
       return renderMarkdown(result);
+    case "html":
+      return renderHtmlReport(result);
     default:
       return renderTerminal(result, opts);
   }

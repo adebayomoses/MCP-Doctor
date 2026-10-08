@@ -48,6 +48,29 @@ Secrets detected in that text are shown redacted (first four characters and a le
 
 Credentials you pass via `--header` or `--env` are sent only to the server you are scanning and are not written to reports. The JSON report contains the target command/URL, so avoid putting secrets in the command line itself; use `--env`/`--header`.
 
+## Scanning other people's servers
+
+`scan-all --registry` scans remote servers from the official MCP registry. It is built to be safe to run:
+
+- **No local code execution.** Package-based servers (npm, PyPI, Docker) are skipped, because starting them would run third-party code on your machine. Only remote HTTP/SSE endpoints are contacted.
+- **Passive only.** Tools are never called, even with `--active`. The scanner initializes, pings, and lists tools, resources and prompts.
+- **Polite.** A `mcp-detector/<version>` User-Agent, 500 ms between scans by default, and at most 8 in parallel.
+- **No credentials sent.** Servers that answer 401/403 are reported as "needs authentication" and not scored.
+
+`scan-all --clients` runs *your own* configured servers the way your MCP clients do, so it executes the same commands you already trust; use `--dry-run` to see them first.
+
+## The web app
+
+`mcp-detector ui` can start programs on your machine, so it binds to `127.0.0.1` only, requires a random access key (carried in the URL fragment), rejects requests addressed to any other host or coming from another website, never sends CORS headers, requires explicit confirmation before starting any command, and renders reports in a sandboxed, script-free frame under a strict Content-Security-Policy. The full model is in [web-app.md](web-app.md).
+
+## Reports, history and sites are untrusted-data sinks
+
+Anything a server says ends up in reports. HTML output escapes all of it, contains no scripts, and sets a Content-Security-Policy that forbids scripts, frames and remote resources. Stored targets are redacted of tokens, passwords and keys. The dashboard binds to `127.0.0.1`, serves only `.html`, `.svg` and `.json` files from its own build directory, and answers only GET/HEAD.
+
+## Community rules and plugins
+
+Declarative community rules only match text; they cannot execute code, and their regular expressions are checked for catastrophic backtracking. JavaScript plugins run code and are **never** loaded because a config file says so: you must pass `--allow-plugins`. Treat a plugin like any dependency you install.
+
 ## Rug pulls: pin what you reviewed
 
 A server can show honest tool definitions while you review it and swap in malicious ones later. Clients rarely tell you.

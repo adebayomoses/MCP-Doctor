@@ -38,6 +38,16 @@ Findings:
    Tool can write or modify files via an unrestricted "path" parameter.
 ```
 
+## Quick start
+
+```bash
+npx mcp-detector          # a short menu: open the web app, see a demo, or scan the servers you already use
+```
+
+Prefer a point-and-click interface? Run `mcp-detector ui`. It opens a web app on your own computer where you paste a server's command or web address, click **Scan**, and read the report ([docs/web-app.md](docs/web-app.md)). Want to see a report first? `mcp-detector demo` scans a built-in example, which touches nothing on your computer.
+
+The rest of this README covers the command line, which is what you want for scripts and CI.
+
 ## What it checks
 
 | Area | Examples | Rules |
@@ -56,7 +66,7 @@ All 32 rules are documented in [docs/rules.md](docs/rules.md) (what, why, how to
 npm install -g mcp-detector     # or: npx mcp-detector ...
 ```
 
-Requires Node.js 18+.
+Requires Node.js 22.12 or newer.
 
 ## Usage
 
@@ -83,6 +93,23 @@ mcp-detector report --format markdown
 # pin the tool definitions you reviewed; later scans flag any change (rug-pull detection)
 mcp-detector pin -- node ./build/index.js        # writes mcp-detector.lock.json: commit it
 mcp-detector scan -- node ./build/index.js       # now reports MCP-032 if a tool changed
+
+# scan many servers: a file, every server in your MCP clients, or the official registry (remote servers, passive)
+mcp-detector scan-all servers.json
+mcp-detector scan-all --clients --dry-run
+mcp-detector scan-all --registry --limit 25 --site public/
+
+# track a server over time, make a README badge, share an HTML report
+mcp-detector history my-server
+mcp-detector badge -o badge.svg
+mcp-detector scan --format html -o report.html -- node ./build/index.js
+
+# static scoreboard (host anywhere) or a local read-only dashboard
+mcp-detector site -o public/
+mcp-detector dashboard
+
+# add your own rules (YAML, no code executed)
+mcp-detector scan --rules ./my-rules.yml -- node ./build/index.js
 
 # explain a rule / create a starter config
 mcp-detector rules MCP-012
@@ -166,6 +193,11 @@ const config = { ...defaultConfig(), server: { command: "node", args: ["server.j
 const { result } = await runScan(config);
 console.log(result.score, result.findings);
 ```
+
+## Beyond a single scan
+
+- **Batch and registry scanning, history, badges, scoreboard site, local dashboard:** [docs/batch-and-registry.md](docs/batch-and-registry.md). Registry scans cover remote servers only and never call a tool; package-based servers are never run.
+- **Community rules** (declarative YAML, plus opt-in JS plugins): [docs/community-rules.md](docs/community-rules.md).
 
 ## Contributing
 

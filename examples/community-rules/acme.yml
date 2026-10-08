@@ -1,0 +1,32 @@
+# Example community rules. Declarative: only regular expressions, no code is executed.
+# Use with:  mcp-detector scan --rules examples/community-rules -- <server>
+# or in mcp-detector.yml:  community_rules: [./examples/community-rules]
+rules:
+  - id: ACME-001
+    name: Tool promises to run without confirmation
+    category: security
+    severity: medium
+    description: A tool description says the tool acts without asking the user first.
+    why: Tools that skip confirmation remove the human from the loop, so any prompt injection that reaches the model can trigger them silently.
+    recommendation: Remove "without confirmation" behaviour, or mark the tool destructive so clients prompt before calling it.
+    applies_to: [tool_description]
+    match:
+      any:
+        - "\\bwithout (asking|confirmation|confirming|prompting)\\b"
+        - "\\bautomatically (deletes?|overwrites?|sends?|publishes?)\\b"
+      none:
+        - "\\bnever\\b.{0,20}\\bwithout (asking|confirmation)\\b"
+
+  - id: ACME-002
+    name: Internal ticket system referenced
+    category: quality
+    severity: low
+    description: A description references an internal ticket ID (ACME-1234 style), which means nothing outside the company.
+    why: Internal references leak implementation details and are useless to models and users of a public server.
+    recommendation: Replace internal ticket references with a plain-language explanation.
+    applies_to: [tool_description, parameter_description]
+    tools: ["acme_*", "internal_*"]
+    match:
+      any:
+        - "\\b(JIRA|ACME)-\\d{3,6}\\b"
+        - "\\bsee ticket\\b"

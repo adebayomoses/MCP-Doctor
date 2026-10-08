@@ -1,4 +1,5 @@
 import { SUPPORTED_PROTOCOL_VERSIONS } from "@modelcontextprotocol/sdk/types.js";
+import { explainConnectError } from "../core/explain.js";
 import type { Rule } from "../core/types.js";
 
 const VERSION_ERR = /protocol version/i;
@@ -14,13 +15,19 @@ export const protocolRules: Rule[] = [
     why: "A server that cannot initialize cannot be used by any MCP client, and nothing else about it can be verified.",
     recommendation:
       "Run the server command by hand and check its stderr. For stdio servers make sure stdout carries only JSON-RPC messages (log to stderr). For HTTP servers confirm the URL, transport type and any required headers.",
-    check({ snapshot }) {
+    check({ snapshot, config }) {
       if (snapshot.connected) return [];
       if (snapshot.connectError && VERSION_ERR.test(snapshot.connectError)) return [];
       const stderr = snapshot.stderr?.trim().split("\n").slice(-3).join(" | ");
+      const why = explainConnectError(snapshot.connectError ?? "", {
+        command: config.server?.command,
+        url: config.server?.url,
+        timeoutMs: config.thresholds.connect_ms,
+        stderr: snapshot.stderr,
+      });
       return [
         {
-          message: `Could not initialize: ${snapshot.connectError ?? "unknown error"}`,
+          message: `Could not initialize: ${snapshot.connectError ?? "unknown error"}. ${why.title} ${why.hint}`,
           evidence: stderr ? `server stderr: ${stderr.slice(0, 300)}` : undefined,
         },
       ];

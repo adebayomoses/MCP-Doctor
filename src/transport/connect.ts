@@ -4,6 +4,8 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { ResolvedConfig } from "../core/types.js";
+import { redactTarget } from "../detectors/security/redact-target.js";
+import { VERSION } from "../version.js";
 
 export interface Connection {
   client: Client;
@@ -24,8 +26,8 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 }
 
 export function describeTarget(server: NonNullable<ResolvedConfig["server"]>): string {
-  if (server.url) return server.url;
-  return [server.command, ...(server.args ?? [])].filter(Boolean).join(" ");
+  const raw = server.url ?? [server.command, ...(server.args ?? [])].filter(Boolean).join(" ");
+  return redactTarget(raw);
 }
 
 /** Record the negotiated protocol version on the transport (the SDK only exposes it via this hook). */
@@ -56,7 +58,8 @@ export async function connect(
 
   if (server.url) {
     const url = new URL(server.url);
-    const requestInit = server.headers ? { headers: server.headers } : undefined;
+    // Identify ourselves to server operators; a user-supplied header of the same name wins.
+    const requestInit = { headers: { "user-agent": `mcp-detector/${VERSION}`, ...(server.headers ?? {}) } };
     const kind = server.transport ?? "http";
     if (kind === "sse") {
       const client = makeClient();

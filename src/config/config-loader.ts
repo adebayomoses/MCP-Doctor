@@ -51,7 +51,7 @@ export function loadConfig(path?: string, cwd = process.cwd()): { config: Resolv
   }
   if (raw.rules && typeof raw.rules === "object") {
     for (const [k, v] of Object.entries(raw.rules)) {
-      if (/^MCP-\d+$/i.test(k)) {
+      if (/^[A-Za-z][A-Za-z0-9]*-\d+$/.test(k)) {
         const id = k.toUpperCase();
         if (typeof v === "boolean") cfg.ruleOverrides[id] = { enabled: v };
         else if (typeof v === "string") cfg.ruleOverrides[id] = v === "off" ? { enabled: false } : { severity: asSeverity(v, `rules.${k}`) };
@@ -82,6 +82,9 @@ export function loadConfig(path?: string, cwd = process.cwd()): { config: Resolv
       cfg.activeDeny = raw.active.deny ?? [];
     }
   }
+  const asList = (v: unknown) => (Array.isArray(v) ? v : v === undefined ? [] : [v]).map((p) => resolve(dirname(file), String(p)));
+  cfg.communityRules = asList(raw.community_rules);
+  cfg.plugins = asList(raw.plugins);
   if (typeof raw.baseline === "string") cfg.baselineFile = resolve(dirname(file), raw.baseline);
   if (raw.ignore) {
     cfg.ignore.rules = (raw.ignore.rules ?? []).map((r: string) => String(r).toUpperCase());

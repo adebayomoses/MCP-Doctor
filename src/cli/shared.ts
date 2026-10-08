@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { Command } from "commander";
 import { loadConfig } from "../config/config-loader.js";
 import { findBaseline, loadBaseline } from "../core/pinning.js";
+import { applyCommunityRules } from "../rules/community.js";
 import type { ResolvedConfig, ScanResult } from "../core/types.js";
 import { parseSeverity } from "../reporting/severity.js";
 import type { ReportFormat } from "../reporting/report-generator.js";
@@ -26,6 +27,9 @@ export interface CommonOptions {
   verbose?: boolean;
   color?: boolean;
   baseline?: string | false;
+  rules?: string[];
+  allowPlugins?: boolean;
+  history?: boolean;
   rule?: string[];
   disable?: string[];
 }
@@ -41,14 +45,17 @@ export function addTargetOptions(cmd: Command): Command {
     .option("--transport <type>", "force transport: stdio | http | sse")
     .option("--timeout <ms>", "per-request timeout in milliseconds")
     .option("--latency <ms>", "latency threshold in milliseconds")
-    .option("--disable <rule...>", "disable rule IDs (e.g. MCP-024)");
+    .option("--disable <rule...>", "disable rule IDs (e.g. MCP-024)")
+    .option("--rules <path...>", "load community rule files or directories (YAML/JSON, no code is executed)")
+    .option("--allow-plugins", "also load JavaScript plugins listed in the config (they run code)");
 }
 
 export function addOutputOptions(cmd: Command): Command {
   return cmd
-    .option("-f, --format <format>", "terminal | json | markdown", "terminal")
+    .option("-f, --format <format>", "terminal | json | markdown | html", "terminal")
     .option("-o, --output <file>", "write the report to a file instead of stdout")
     .option("--verbose", "include explanations and remediation for each finding")
+    .option("--no-history", "do not record this scan in the scan history")
     .option("--no-color", "disable colored output");
 }
 
@@ -161,6 +168,13 @@ export function saveLastScan(result: ScanResult): void {
 export function validateFormat(f: string | undefined): ReportFormat {
   const v = (f ?? "terminal").toLowerCase();
   if (v === "md") return "markdown";
-  if (v === "terminal" || v === "json" || v === "markdown") return v;
-  throw new Error(`Invalid --format "${f}". Use terminal, json or markdown.`);
+  if (v === "terminal" || v === "json" || v === "markdown" || v === "html") return v;
+  throw new Error(`Invalid --format "${f}". Use terminal, json, markdown or html.`);
+}
+
+/** Load community rules (declarative always; JS plugins only with --allow-plugins) and tell the user what happened. */
+export async function loadExtraRules(config: ResolvedConfig, opts: { rules?: string[]; allowPlugins?: boolean }): Promise<void> {
+  const r = await applyCommunityRules(config, { rulePaths: (opts.rules ?? []).map((p) => resolve(p)), allowPlugins: opts.allowPlugins });
+  if (r.skippedPlugins)
+    process.stderr.write(`warning: ${r.skippedPlugins} plugin(s) listed in the config were NOT loaded. Plugins run code; pass --allow-plugins to load them.\n`);
 }

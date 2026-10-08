@@ -22,5 +22,7 @@ export function defaultConfig(): ResolvedConfig {
     activeAllow: [],
     activeDeny: [],
     ignore: { rules: [], tools: [] },
+    communityRules: [],
+    plugins: [],
   };
 }

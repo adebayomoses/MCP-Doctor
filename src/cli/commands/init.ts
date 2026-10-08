@@ -38,6 +38,10 @@ thresholds:
 # ignore:
 #   rules: [MCP-024]
 #   tools: [legacy_tool]
+
+# Your own rules (declarative YAML; no code is executed):
+# community_rules:
+#   - ./team-rules/
 `;
 
 export function initCommand(): Command {

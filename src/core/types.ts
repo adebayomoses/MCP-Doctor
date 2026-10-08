@@ -72,6 +72,8 @@ export interface ServerSnapshot {
   skippedCalls: { tool: string; reason: string }[];
   /** Server stderr output captured during the scan (truncated). */
   stderr?: string;
+  /** The server rejected us with an authentication/authorization error (not a defect in the server). */
+  authRequired?: boolean;
 }
 
 export interface BaselineTool {
@@ -182,4 +184,8 @@ export interface ResolvedConfig {
   /** Trusted tool definitions to compare against (rug-pull detection). */
   baseline?: Baseline;
   baselineFile?: string;
+  /** Declarative community rule files/directories (absolute paths). */
+  communityRules: string[];
+  /** JavaScript plugin modules; only loaded when the user passes --allow-plugins. */
+  plugins: string[];
 }

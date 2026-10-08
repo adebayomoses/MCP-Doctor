@@ -5,7 +5,7 @@ import { evaluate } from "../../core/detector.js";
 import { BASELINE_FILENAME, buildBaseline, diffBaseline, saveBaseline } from "../../core/pinning.js";
 import { collectSnapshot } from "../../core/scanner.js";
 import { VERSION } from "../../version.js";
-import { addTargetOptions, resolveConfig, type CommonOptions } from "../shared.js";
+import { addTargetOptions, loadExtraRules, resolveConfig, type CommonOptions } from "../shared.js";
 
 export function pinCommand(): Command {
   const cmd = new Command("pin")
@@ -19,6 +19,7 @@ export function pinCommand(): Command {
   cmd.action(async (server: string[], opts: CommonOptions) => {
     const c = pc.createColors(opts.color !== false && pc.isColorSupported);
     const { config } = resolveConfig(server, { ...opts, baseline: opts.baseline });
+    await loadExtraRules(config, opts);
     const previous = config.baseline;
     config.baseline = undefined; // judge the server on its own merits, not against the old pin
 

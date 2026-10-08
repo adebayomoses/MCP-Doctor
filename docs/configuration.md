@@ -54,7 +54,14 @@ active:                        # or simply `active: true`
 ignore:
   rules: [MCP-022]             # same as `MCP-022: off`
   tools: [legacy_tool]         # skip every finding on these tools
+
+community_rules:               # declarative YAML/JSON rule files or folders (no code is executed)
+  - ./team-rules/
+plugins:                       # JavaScript plugins; ignored (with a warning) unless you pass --allow-plugins
+  - ./my-plugin.mjs
 ```
+
+Community rule IDs (`ACME-001`) can be re-levelled or turned off in `rules:` exactly like built-in ones. See [community-rules.md](community-rules.md).
 
 Rule IDs are case-insensitive. A per-rule `off` wins over a group toggle; a per-rule severity wins over the rule's default and over per-hit severities.
 

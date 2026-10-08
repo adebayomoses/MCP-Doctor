@@ -6,7 +6,7 @@ import { classifyTool } from "../../detectors/tools/capabilities.js";
 import { toolParams, paramType } from "../../detectors/tools/text.js";
 import { SEVERITY_ICON } from "../../reporting/severity.js";
 import { SEVERITY_ORDER, type Finding, type Severity } from "../../core/types.js";
-import { addTargetOptions, resolveConfig, validateFormat, writeOutput, type CommonOptions } from "../shared.js";
+import { addTargetOptions, loadExtraRules, resolveConfig, validateFormat, writeOutput, type CommonOptions } from "../shared.js";
 
 function toolRisk(findings: Finding[]): Severity | "none" {
   let worst = -1;
@@ -25,6 +25,7 @@ export function inspectCommand(): Command {
   cmd.action(async (server: string[], opts: CommonOptions) => {
     const format = validateFormat(opts.format);
     const { config } = resolveConfig(server, opts);
+    await loadExtraRules(config, opts);
     const snapshot = await collectSnapshot(config);
     const { result } = evaluate(snapshot, config);
     const c = pc.createColors(opts.color !== false && !opts.output && pc.isColorSupported);

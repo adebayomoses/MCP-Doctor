@@ -1,11 +1,13 @@
 import pc from "picocolors";
 import { Command } from "commander";
 import { runScan } from "../../core/detector.js";
+import { saveHistory } from "../../store/history.js";
 import { renderReport } from "../../reporting/report-generator.js";
 import { countAtOrAbove, exceedsThreshold } from "../../reporting/severity.js";
 import {
   addOutputOptions,
   addTargetOptions,
+  loadExtraRules,
   resolveConfig,
   saveLastScan,
   validateFormat,
@@ -26,8 +28,10 @@ export function scanCommand(): Command {
   cmd.action(async (target: string[], opts: CommonOptions) => {
     const format = validateFormat(opts.format);
     const { config } = resolveConfig(target, opts);
+    await loadExtraRules(config, opts);
     const { result, snapshot, ruleErrors } = await runScan(config);
     saveLastScan(result);
+    if (opts.history !== false) saveHistory(result);
     writeOutput(renderReport(result, format, { verbose: opts.verbose, color: opts.color !== false && !opts.output && pc.isColorSupported }), opts.output);
 
     if (format === "terminal") {

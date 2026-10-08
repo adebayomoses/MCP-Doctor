@@ -9,7 +9,7 @@ export function reportCommand(): Command {
   return new Command("report")
     .description("Render a saved scan (default: the most recent `scan`) as terminal, JSON or Markdown output")
     .argument("[file]", "JSON result saved by `scan --format json -o <file>`", LAST_SCAN_PATH)
-    .option("-f, --format <format>", "terminal | json | markdown", "markdown")
+    .option("-f, --format <format>", "terminal | json | markdown | html", "markdown")
     .option("-o, --output <file>", "write the report to a file")
     .option("--verbose", "include explanations and remediation")
     .option("--no-color", "disable colored output")

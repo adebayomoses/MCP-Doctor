@@ -6,6 +6,10 @@ import { buildSampleArgs, classifyToolForActiveCall } from "./active.js";
 
 const MAX_PAGES = 50;
 
+/** Connection errors that mean "you need credentials", as opposed to "the server is broken". */
+export const AUTH_ERROR =
+  /\b(401|403)\b|unauthori[sz]ed|forbidden|not authenticated|authentication (?:is )?required|\b(?:invalid|missing|expired|bad)\b[^.]{0,25}\b(?:token|api[ _-]?key|credentials?|authorization)\b|\b(?:token|api[ _-]?key|credentials?) (?:is |are )?(?:required|missing|invalid)\b|oauth/i;
+
 /**
  * Issue a request and return the raw result. The SDK's typed list helpers throw away the
  * whole response if any single entry is malformed, which would hide exactly the defects
@@ -18,7 +22,7 @@ async function rawList(client: any, method: string, key: string, timeout: number
   return { items: items.filter((i) => i && typeof i === "object"), next: typeof res.nextCursor === "string" ? res.nextCursor : undefined };
 }
 
-const oneLine = (s: string) => s.replace(/s+/g, " ").trim().slice(0, 300);
+const oneLine = (s: string) => s.replace(/\s+/g, " ").trim().slice(0, 300);
 
 async function listAll<T>(fn: (cursor?: string) => Promise<{ items: T[]; next?: string }>): Promise<T[]> {
   const out: T[] = [];
@@ -64,6 +68,7 @@ export async function collectSnapshot(config: ResolvedConfig): Promise<ServerSna
     });
   } catch (e) {
     snap.connectError = (e as Error).message;
+    snap.authRequired = AUTH_ERROR.test(snap.connectError);
     snap.stderr = stderr || undefined;
     return snap;
   }

@@ -16,5 +16,13 @@ All notable changes are documented here. Format based on [Keep a Changelog](http
 - MCP-031 network risk (capture/tunnel hosts, image-embedded exfiltration, internal and cloud-metadata addresses, non-HTTP schemes) and MCP-032 rug-pull detection.
 - `mcp-detector pin` and `mcp-detector.lock.json` baseline; `scan --baseline` / `--no-baseline`.
 - Labelled detection corpus (attack and benign samples) used as a regression suite for precision and recall.
+- `scan-all`: batch scanning from a servers file, installed MCP clients' configs, or the official registry (remote servers only, passive, polite; package-based servers are never run).
+- Scan history (`history`), score badges (`badge`, SVG and shields.io endpoint), script-free HTML report (`--format html`), static scoreboard site (`site`) and local read-only dashboard (`dashboard`).
+- Community rules: declarative YAML/JSON rules (`--rules`, `community_rules:`) with ReDoS guards, and opt-in JavaScript plugins (`--allow-plugins`).
+- Secrets in command lines and URLs are redacted before they are stored or published.
+- Remote requests carry a `mcp-detector/<version>` User-Agent; authentication failures are classified as "needs authentication" rather than a broken server.
+- `mcp-detector ui`: an interactive local web app (demo, paste a command, web address with sign-in headers, servers from installed MCP apps) with a hardened localhost-only security model (private access key in the URL fragment, Host/Origin checks, explicit consent to start programs, sandboxed script-free report frame, strict CSP).
+- `mcp-detector demo` and a first-run menu when `mcp-detector` is run with no arguments in an interactive terminal.
+- Plain-language explanations for connection failures (missing program, missing file, timeout, sign-in needed, unreachable address, wrong path) in the web app and in MCP-001 findings.
 - GitHub Action (`github-action/action.yml`) with job-summary report.
 - Example servers (`examples/secure-server`, `examples/vulnerable-server`) and a test suite with stdio and HTTP integration tests.
