@@ -37,6 +37,14 @@ function globToRegExp(g: string): RegExp {
  * Compile a user-supplied regex, refusing patterns likely to backtrack catastrophically. Community
  * rules run on every scanned text, so a hostile or careless pattern must not be able to hang a scan.
  */
+const MAX_OPEN_ENDED = 4;
+
+/** Number of unbounded repetitions (`*`, `+`, `{n,}`) outside escapes and character classes. */
+export function countOpenEnded(source: string): number {
+  const bare = source.replace(/\\./g, "x").replace(/\[(?:[^\]\\]|\\.)*\]/g, "x");
+  return (bare.match(/[*+]|\{\d+,\}/g) ?? []).length;
+}
+
 export function compileSafeRegex(source: string, flags = "i", where = "pattern"): RegExp {
   if (typeof source !== "string" || !source.length) throw new Error(`${where}: pattern must be a non-empty string`);
   if (source.length > 300) throw new Error(`${where}: pattern is longer than 300 characters`);
@@ -45,15 +53,20 @@ export function compileSafeRegex(source: string, flags = "i", where = "pattern")
   // is the classic source of exponential backtracking. Refuse the whole family rather than try to judge each one.
   if (/\((?:\?:)?(?:[^()\\]|\\.)*[+*?{|](?:[^()\\]|\\.)*\)[+*{]/.test(source))
     throw new Error(`${where}: a repeated group that contains a quantifier or alternation (e.g. "(a+)+", "(a|b)*") can cause catastrophic backtracking; rewrite it without the outer repetition`);
+  // Several open-ended repetitions in one pattern (e.g. ".*.*.*.*.*x") backtrack polynomially: the work grows like
+  // n^k for k of them. Count them without running the pattern, so rejecting a bad one is instant on any machine.
+  const openEnded = countOpenEnded(source);
+  if (openEnded > MAX_OPEN_ENDED)
+    throw new Error(`${where}: ${openEnded} open-ended repetitions (*, + or {n,}); at most ${MAX_OPEN_ENDED} are allowed because more can make matching extremely slow. Use bounded forms such as .{0,40}`);
   let re: RegExp;
   try {
     re = new RegExp(source, flags);
   } catch (e) {
     throw new Error(`${where}: invalid regular expression: ${(e as Error).message}`);
   }
-  // Polynomial blow-ups (e.g. several adjacent ".*") are caught by timing the pattern on growing adversarial
-  // inputs, smallest first, so a bad pattern is rejected before it gets slow enough to hang validation.
-  for (const n of [40, 80, 160, 300]) {
+  // Defence in depth: time what is left on small adversarial inputs, smallest first. With at most MAX_OPEN_ENDED
+  // repetitions the cost at the largest size is bounded (about n^4 / 24 steps), so this cannot hang validation.
+  for (const n of [16, 32, 64, 128]) {
     for (const probe of ["a".repeat(n) + "!", " ".repeat(n) + "!", "ab".repeat(n / 2) + "!"]) {
       const t = performance.now();
       re.test(probe);

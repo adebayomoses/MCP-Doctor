@@ -60,7 +60,8 @@ Rules run on every scanned text, so a careless pattern must not be able to hang 
 
 - they are longer than 300 characters or invalid;
 - a repeated group contains a quantifier or alternation, such as `(a+)+`, `(a|b)*`, `(x?){20}`, which is the classic source of exponential backtracking (rewrite as `a+` or `(?:a|b)` without the outer repetition);
-- they are measurably slow on adversarial input (several adjacent `.*`, for example).
+- they contain more than 4 open-ended repetitions (`*`, `+` or `{n,}`, outside character classes). Each extra one multiplies the worst-case matching time, so `.*.*.*.*.*x` is refused instantly without being run. Use bounded forms such as `.{0,40}` instead;
+- they are measurably slow on small adversarial inputs (a final timing check, bounded in cost because of the limit above).
 
 Matching is limited to the first 20,000 characters of each text. This is a best-effort guard, not a proof of safety. Review rule files from sources you do not trust, like any other configuration.
 

@@ -8,6 +8,7 @@ import {
   applyCommunityRules,
   buildDeclarativeRule,
   compileSafeRegex,
+  countOpenEnded,
   loadDeclarativeRules,
   loadPluginRules,
   registerExternalRules,
@@ -54,10 +55,25 @@ describe("regex safety", () => {
   it.each(["(a+)+$", "(a|aa)+$", "(a?){30}a{30}", "(x*)*y", "(\\d+\\.)+", "(foo|bar)*baz"])("refuses nested/alternated repetition: %s", (p) => {
     expect(() => compileSafeRegex(p)).toThrow(/catastrophic/);
   });
-  it("refuses polynomial blow-ups by timing the pattern, without hanging", () => {
-    const t = Date.now();
-    expect(() => compileSafeRegex("(.*)(.*)(.*)(.*)(.*)(.*)x")).toThrow(/too slow/);
-    expect(Date.now() - t).toBeLessThan(5000);
+  it("refuses polynomial blow-ups instantly, without running the pattern", () => {
+    // Found on CI: validating this by timing it took 8 s on a slow runner. It must be rejected statically.
+    for (const p of ["(.*)(.*)(.*)(.*)(.*)(.*)x", ".*.*.*.*.*x", "a+b+c+d+e+f+g", "\\w+\\s+\\w+\\s+\\w+\\s+x*"]) {
+      const t = performance.now();
+      expect(() => compileSafeRegex(p), p).toThrow(/open-ended repetitions/);
+      expect(performance.now() - t, `${p} took too long to reject`).toBeLessThan(100);
+    }
+  });
+  it("counts open-ended repetitions correctly, ignoring escapes and character classes", () => {
+    expect(countOpenEnded("a*b+c{2,}")).toBe(3);
+    expect(countOpenEnded("a{0,40}b{2,5}")).toBe(0);
+    expect(countOpenEnded("\\*\\+[*+]x")).toBe(0);
+    expect(countOpenEnded("^get_[a-z]+$")).toBe(1);
+  });
+  it("accepts a realistic pattern with the maximum allowed repetitions, and stays fast on it", () => {
+    const p = "a.*b.*c.*d.*e"; // 4 open-ended repetitions: allowed
+    const t = performance.now();
+    expect(compileSafeRegex(p).source).toBe(p);
+    expect(performance.now() - t).toBeLessThan(2000);
   });
   it.each(["\\bwithout (asking|confirmation)\\b", "ignore.{0,20}instructions", "^get_[a-z]+$", "(foo|bar)?baz", "\\d{3}-\\d{4}"])("accepts ordinary patterns: %s", (p) => {
     expect(compileSafeRegex(p).source).toBe(p);
