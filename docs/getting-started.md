@@ -1,6 +1,20 @@
 # Getting started
 
+> **Not comfortable with a terminal?** Use the point-and-click path instead: [for-beginners.md](for-beginners.md).
+
 ## 1. Install
+
+Requires Node.js 22.12 or newer. **From a clone (works today):**
+
+```bash
+git clone https://github.com/adebayomoses/MCP-Doctor.git
+cd MCP-Doctor
+npm install
+npm run build
+npm link            # makes the `mcp-detector` command available everywhere
+```
+
+**Once the package is published to npm:**
 
 ```bash
 npm install -g mcp-detector

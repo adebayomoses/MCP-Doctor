@@ -27,7 +27,8 @@
     "typecheck": "tsc --noEmit",
     "docs:rules": "tsx scripts/gen-rules-doc.ts",
     "prepublishOnly": "npm run typecheck && npm test && npm run build",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "app": "npm run build --silent && node dist/cli/index.js ui"
   },
   "keywords": [
     "mcp",

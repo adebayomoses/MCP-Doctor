@@ -45,6 +45,18 @@ npm run docs:rules && git diff --exit-code docs/rules.md
 - [ ] Update `CHANGELOG.md`: change "0.1.0 - Unreleased" to the release date.
 - [ ] Skim the README rendering on GitHub (the sample output block, tables, relative links into `docs/`).
 
+## 2b. Make the beginner path work for real people
+
+The README leads with a no-code path (`docs/for-beginners.md`, `start-app.bat`, `start-app.command`). Before announcing:
+
+- [ ] **Mark the Mac launcher executable in git**, otherwise a ZIP downloaded from GitHub opens it as a text file instead of running it:
+  `git update-index --chmod=+x start-app.command` then commit. (Windows cannot set this bit on disk, so it has to be recorded in git.)
+- [ ] **Try it on a clean Mac** (or ask someone to). The launcher logic is tested under bash on Windows, never on macOS itself. Check the "unidentified developer" prompt matches the wording in `docs/for-beginners.md`.
+- [ ] **Try the Windows path on a machine without Node.js** and with an old Node.js to see the guidance messages, and note the exact SmartScreen wording.
+- [ ] Download the ZIP from GitHub (not your working folder) and follow `docs/for-beginners.md` as a stranger would. Fix anything unclear.
+- [ ] Refresh the screenshots in `docs/images/` if the app's look changes.
+- [ ] **When the package is on npm:** remove the "Not on npm yet" notes in `README.md` and `docs/getting-started.md`, and make `npx mcp-detector` the first suggestion for developers.
+
 ## 3. Broaden the false-positive check (recommended before announcing)
 
 Detection is heuristic; the only evidence so far is ~12 real servers. Before telling people to put `--fail-on high` in CI, scan more:

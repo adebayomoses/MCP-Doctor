@@ -1,14 +1,45 @@
 # 🔍 MCP Detector
 
-**Security, reliability, and quality scanner for [Model Context Protocol](https://modelcontextprotocol.io) (MCP) servers.**
+**A safety check for MCP servers, the add-ons you plug into AI assistants.**
+Security, reliability, and quality scanner for [Model Context Protocol](https://modelcontextprotocol.io) (MCP) servers.
 
 > The ESLint + npm audit for MCP servers.
 
-Point it at an MCP server and get protocol checks, tool and schema analysis, security indicators, performance numbers and a health score, with a concrete fix for every finding.
+## Not technical? Start here
+
+AI assistants such as Claude can be given extra abilities by add-ons (called *MCP servers*). Some are well built, some are sloppy, and a few are dangerous. **MCP Detector checks one for you**: it gives it a score from 0 to 100, lists what it found, and explains how to fix each problem. It runs on your own computer and sends nothing anywhere.
+
+You do not need to know how to code. Three steps, about 10 minutes the first time:
+
+1. **Install Node.js** (a free program MCP Detector runs on): go to <https://nodejs.org> and click the big **LTS** button.
+2. **Download this project:** on this page click the green **Code** button, then **Download ZIP**, and extract it.
+3. **Double-click the start file** in the folder: **`start-app.bat`** on Windows, **`start-app.command`** on Mac. Your browser opens with the app.
+
+![The MCP Detector app: pick a demo, paste a command, enter a web address, or choose a server you already use](docs/images/app-home.jpg)
+
+Click **Scan the unsafe example** to see what a report looks like. It touches nothing on your computer.
+
+👉 **[Full step-by-step guide with pictures, a safety FAQ and troubleshooting](docs/for-beginners.md)**
+
+> **A score is a warning light, not a guarantee.** A high score does not prove a server is safe, and a low one does not always mean it is malicious.
+
+---
+
+## For developers
+
+> **Not on npm yet.** Until the first release, run it from a clone (below). The `npx mcp-detector …` and `npm install -g mcp-detector` forms in this README work once it is published.
 
 ```bash
-npx mcp-detector scan -- npx -y @modelcontextprotocol/server-everything
+git clone https://github.com/adebayomoses/MCP-Doctor.git
+cd MCP-Doctor
+npm install
+npm run app                  # builds, then opens the web app
+npm run build && node dist/cli/index.js scan -- npx -y @modelcontextprotocol/server-everything
 ```
+
+`npm link` (after `npm run build`) makes the `mcp-detector` command available everywhere, which is what the examples below use.
+
+Point it at an MCP server and get protocol checks, tool and schema analysis, security indicators, performance numbers and a health score, with a concrete fix for every finding. Example terminal output:
 
 ```text
 MCP DETECTOR
@@ -38,15 +69,13 @@ Findings:
    Tool can write or modify files via an unrestricted "path" parameter.
 ```
 
-## Quick start
+## Three ways to use it
 
-```bash
-npx mcp-detector          # a short menu: open the web app, see a demo, or scan the servers you already use
-```
-
-Prefer a point-and-click interface? Run `mcp-detector ui`. It opens a web app on your own computer where you paste a server's command or web address, click **Scan**, and read the report ([docs/web-app.md](docs/web-app.md)). Want to see a report first? `mcp-detector demo` scans a built-in example, which touches nothing on your computer.
-
-The rest of this README covers the command line, which is what you want for scripts and CI.
+| | Best for | How |
+|---|---|---|
+| **Web app** | anyone; point and click | double-click `start-app.bat` / `start-app.command`, or `mcp-detector ui` ([details](docs/web-app.md)) |
+| **Terminal menu** | a first look from the command line | run `mcp-detector` with no arguments; `mcp-detector demo` shows a sample report |
+| **Command line** | scripts, automated checks, CI | `mcp-detector scan …` (the rest of this README) |
 
 ## What it checks
 
@@ -61,6 +90,10 @@ The rest of this README covers the command line, which is what you want for scri
 All 32 rules are documented in [docs/rules.md](docs/rules.md) (what, why, how to fix). Run `mcp-detector rules MCP-005` for the same in the terminal.
 
 ## Install
+
+From a clone (works today): see **For developers** above, then `npm link` to get the `mcp-detector` command.
+
+Once published to npm:
 
 ```bash
 npm install -g mcp-detector     # or: npx mcp-detector ...

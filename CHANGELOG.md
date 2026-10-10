@@ -24,5 +24,6 @@ All notable changes are documented here. Format based on [Keep a Changelog](http
 - `mcp-detector ui`: an interactive local web app (demo, paste a command, web address with sign-in headers, servers from installed MCP apps) with a hardened localhost-only security model (private access key in the URL fragment, Host/Origin checks, explicit consent to start programs, sandboxed script-free report frame, strict CSP).
 - `mcp-detector demo` and a first-run menu when `mcp-detector` is run with no arguments in an interactive terminal.
 - Plain-language explanations for connection failures (missing program, missing file, timeout, sign-in needed, unreachable address, wrong path) in the web app and in MCP-001 findings.
+- No-code onboarding: a plain-language guide (`docs/for-beginners.md`) with screenshots, double-click launchers (`start-app.bat`, `start-app.command`) that check Node.js, set up on first run and open the web app, and an `npm run app` shortcut. The README now leads with this path.
 - GitHub Action (`github-action/action.yml`) with job-summary report.
 - Example servers (`examples/secure-server`, `examples/vulnerable-server`) and a test suite with stdio and HTTP integration tests.
